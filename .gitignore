@@ -1,0 +1,8 @@
+
+.vs/hangman/v15/.suo
+*.db
+*.ipch
+*.log
+*.tlog
+*.idb
+*.pdb

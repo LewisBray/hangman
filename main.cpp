@@ -1,11 +1,8 @@
+#include "hangman.h"
+
 #include <iostream>
 #include <fstream>
-#include <cstdlib>
-#include <cstring>
-#include <vector>
 #include <ctime>
-
-#include "hangman.h"
 
 bool get_words(vector<string>& words);//Gets words/phrases from text file, returns true if completed successfully
 bool play_again();//Prompts the user if they would like to play again, returns true if users specifies yes
@@ -28,21 +25,21 @@ int main()
 
         hangman game(words[selection]);//Initialises game with random word
 
-        game.print_progress();
+        game.PrintProgress();
 
         while(1)//Loop to receive and check guesses after game is initialised
         {
             char guess;
 
-            game.get_input(guess);
+            game.GetGuess(guess);
 
-            game.update_game(guess);
+            game.UpdateProgress(guess);
 
             cout << endl << endl;
 
-            game.print_progress();
+            game.PrintProgress();
 
-            if(game.check_if_over())
+            if(game.IsOver())
             {
                 if(!play_again()){quit = true;}//If user does not want to play again, main loop is exited
                 break;

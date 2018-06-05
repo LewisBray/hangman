@@ -1,225 +1,233 @@
-#include <iostream>
-#include <cstring>
-#include <vector>
-
 #include "hangman.h"
 
-hangman::hangman(const string& input) : mistakes(0), word_length(input.size()), word(input), progress(input.size())
-//Constructor which sets up the game after being given a word (called 'input' in declaration)
+#include <iostream>
+
+
+// Initialises the game after being passed a word.
+hangman::hangman(const std::string& input)
+    : mistakes{0}
+    , wordLength{input.size()}
+    , word{input}
+    , progress(input.size())
 {
-    for(int i = 0; i < input.size(); i++)//Sets all progress elements to false since no letters have been guessed
-    {
-        if(word[i] == ' '){progress[i] = true;}//Sets spaces to true since we want /'s to be displayed in place of spaces
-        else{progress[i] = false;}
+    // Set corresponding bool for 'spaces' to true as we
+    // want /'s displayed in place of spaces throughout
+    for (int i = 0; i < input.size(); ++i) {
+        if (word[i] == ' ')
+            progress[i] = true;
+        else
+            progress[i] = false;
     }
 }
 
-bool hangman::check_if_over()
-//Checks if the game is finished, e.g. no more guesses or word has been correctly guessed
-{
-    if(check_if_failed())
-    {
-        cout << endl << "Uh, oh!  Too many guesses...  The word/phrase was: " << word << "." << endl << endl;
 
+// Checks if game is over (e.g. no more guesses or word has been correctly guessed).
+bool hangman::IsOver()
+{
+    if (TooManyGuesses()) {
+        printf("\nUh, oh!  Too many guesses...  The word/phrase was: %s.\n\n", word);
         return true;
     }
 
-    if(check_if_complete())
-    {
-        cout << endl << "Well done, you got it!" << endl << endl;
-
+    if (WordRevealed()) {
+        std::cout << "\nWell done, you got it!\n\n";
         return true;
     }
 
     return false;
 }
 
-void hangman::get_input(char& guess)
-//Prompts the user to guess a letter and makes sure it is valid before moving on
-{
-    while(1)
-    {
-        cout << endl << "Guess: ";
-        cin >> guess;
 
-        if(check_if_valid(guess)){break;}
+// Prompts the user to guess a letter and makes sure it is valid before moving on.
+void hangman::GetGuess(char& guess)
+{
+    while (true)
+    {
+        printf("\nGuess: ");
+        std::cin >> guess;
+
+        if (ValidGuess(guess))
+            break;
     }
 }
 
-void hangman::update_game(const char& guess)
-//Updates the fields in the hangman class, in game 'guess' is lower-case by this point
+
+// Updates the fields in the hangman class.
+/*
+The parameter 'guess' should be lower case before calling this, this results in
+only lower case letters being stored in 'guesses' which keeps the logic simpler
+*/
+void hangman::UpdateProgress(const char guess)
 {
-    guesses.push_back(guess);//Only put lower-case letters into 'guesses' to keep logic simpler
+    guesses.push_back(guess);
 
     bool present = false;
-    char other = toupper(guess);
 
-    for(int i = 0; i < word_length; i++)
-    {
-        if(guess == word[i] || other == word[i])//check for both upper and lower case letters in case they were used in text file
+    // Check for both upper and lower case
+    // letters in case they were used in text file
+    for (int i = 0; i < wordLength; ++i)
+        if ((guess == word[i]) || (toupper(guess) == word[i]))
         {
             progress[i] = true;
-
             present = true;
         }
-    }
 
-    if(present){cout << "Good guess.";}
-    else
-    {
-        mistakes++;
-
-        cout << "Sorry, not there.";
+    if (present)
+        std::cout << "Good guess.";
+    else {
+        ++mistakes;
+        std::cout << "Sorry, not there.";
     }
 }
 
-void hangman::print_progress()
-//Prints the gallows, progress and guesses
+
+// Prints the gallows, progress and guesses.
+/*
+This is pretty tedious...probably a smarter way.
+*/
+void hangman::PrintProgress()
 {
-    cout << "\t     .-----. " << endl;
-    cout << "\t     |     | " << endl;
+    std::cout << "\t     .-----. \n";
+    std::cout << "\t     |     | \n";
 
-    if(mistakes >= 1)//The output could be handled differently but it made the code difficult to read and there probably
-    {                //wasn't a noticeable time difference in this application
-        cout << "\t     _     | " << endl;
-        cout << "\t    | |    | " << endl;
-        cout << "\t     T     | ";
+    if (mistakes >= 1) {
+        std::cout << "\t     _     | \n";
+        std::cout << "\t    | |    | \n";
+        std::cout << "\t     T     | ";
     }
-    else
-    {
-        cout << "\t           | " << endl;
-        cout << "\t           | " << endl;
-        cout << "\t           | ";
+    else {
+        std::cout << "\t           | \n";
+        std::cout << "\t           | \n";
+        std::cout << "\t           | ";
     }
 
-    cout << "\t\t";
+    std::cout << "\t\t";
 
-    for(int i = 0; i < word_length; i++)//Prints the current progress towards guessing 'word'
+    // Prints the current progress towards guessing the word
+    for (int i = 0; i < wordLength; i++)
     {
-        if(progress[i])
-        {
-            if(word[i] == ' '){cout << '/';}//Replace spaces with /'s
-            else{cout << word[i];}
+        if (progress[i]) {
+            if(word[i] == ' ')
+                std::cout << '/';   //Replace spaces with /'s
+            else
+                std::cout << word[i];
         }
-        else{cout << '_';}
+        else
+            std::cout << '_';
 
-        if(i == word_length - 1){cout << endl;}
-        else{cout << ' ';}
+        if (i == wordLength - 1)
+            std::cout << "\n";
+        else
+            std::cout << ' ';
     }
 
-    if(mistakes == 2){cout << "\t     +     | ";}
-    else if(mistakes == 3){cout << "\t   --+     | ";}
-    else if(mistakes >= 4){cout << "\t   --+--   | ";}
-    else{cout << "\t           | ";}
-
-    cout << endl;
-
-    if(mistakes >= 2)
-    {
-        cout << "\t     |     | " << endl;
-        cout << "\t     |     | " << endl;
-        cout << "\t     |     | ";
-    }
+    if (mistakes == 2)
+        std::cout << "\t     +     | ";
+    else if (mistakes == 3)
+        std::cout << "\t   --+     | ";
+    else if (mistakes >= 4)
+        std::cout << "\t   --+--   | ";
     else
-    {
-        cout << "\t           | " << endl;
-        cout << "\t           | " << endl;
-        cout << "\t           | ";
+        std::cout << "\t           | ";
+
+    std::cout << "\n";
+
+    if (mistakes >= 2) {
+        std::cout << "\t     |     | \n";
+        std::cout << "\t     |     | \n";
+        std::cout << "\t     |     | ";
+    }
+    else {
+        std::cout << "\t           | \n";
+        std::cout << "\t           | \n";
+        std::cout << "\t           | ";
     }
 
-    cout << "\t   ";
+    std::cout << "\t   Guesses: ";
 
-    cout << "Guesses: ";
+    // Print out the previous guesses from the user to remind them
+    if (!guesses.empty())
+        for (int i = 0; i < guesses.size(); i++)
+            if (i == 0)
+                std::cout << guesses[i];
+            else
+                printf(", %c", guesses[i]);
 
-    if(guesses.size() != 0)//Prints out the previous guesses from the user to remind them
-    {
-        for(int i = 0; i < guesses.size(); i++)
-        {
-            if(i == 0){cout << guesses[i];}
-            else{cout << ", " << guesses[i];}
-        }
+    std::cout << "\n";
+
+    if (mistakes == 5) {
+        std::cout << "\t    /      | \n";
+        std::cout << "\t   /       | \n";
+        std::cout << "\t           | ";
+    }
+    else if (mistakes >= 5) {
+        std::cout << "\t    / \\    | \n";
+        std::cout << "\t   /   \\   | \n";
+        std::cout << "\t           | ";
+    }
+    else {
+        std::cout << "\t           | \n";
+        std::cout << "\t           | \n";
+        std::cout << "\t           | ";
     }
 
-    cout << endl;
-
-    if(mistakes == 5)
-    {
-        cout << "\t    /      | " << endl;
-        cout << "\t   /       | " << endl;
-        cout << "\t           | " << endl;
-    }
-    else if(mistakes >= 5)
-    {
-        cout << "\t    / \\    | " << endl;
-        cout << "\t   /   \\   | " << endl;
-        cout << "\t           | " << endl;
-    }
-    else
-    {
-        cout << "\t           | " << endl;
-        cout << "\t           | " << endl;
-        cout << "\t           | " << endl;
-    }
-
-    cout << "\t-------------" << endl;
+    std::cout << "\t-------------\n";
 }
 
-bool hangman::check_if_complete()
-//Checks to see if 'word' has been fully revealed <=> all elements of 'progress' vector are true
+
+//Checks if the word has been fully revealed.
+bool hangman::WordRevealed()
 {
-    bool a = true;
+    for (int i = 0; i < wordLength; ++i)
+        if (!progress[i])
+            return false;
 
-    for(int i = 0; i < word_length; i++){if(!progress[i]){a = false;}}
-
-    return a;
+    return true;
 }
 
-bool hangman::check_if_failed()
-//If the player has made 6 mistakes this returns true to end the game
+
+// Returns true if the player has made 6 guesses.
+bool hangman::TooManyGuesses()
 {
-    if(mistakes == 6){return true;}
-    else{return false;}
+    return (mistakes == 6);
 }
 
-bool hangman::check_if_valid(char& guess)
-//Handles errors from the user when inputting a guess, 'guess' becomes lower case after this function has run
-{
-    if(!isalpha(guess))//Handles if user enters something that isn't a letter (upper or lower case)
-    {
-        cout << "That's not a letter!" << endl;
 
+//Handles errors from the user when inputting a guess.
+/*
+guess becomes lower case after this function has run.
+*/
+bool hangman::ValidGuess(char& guess)
+{
+    // Make sure input is a letter
+    if (!isalpha(guess)) {
+        std::cout << "That's not a letter!\n";
         return false;
     }
 
-    if(isupper(guess)){guess = tolower(guess);}//'guess' is now definitely lower case from this point on
+    if (isupper(guess))
+        guess = tolower(guess); // guess is now lower case from this point on
 
-    if(has_been_guessed(guess))//Makes sure the letter hasn't already been guessed
-    {
-        cout << "You've already guessed that letter." << endl;
-
+    //Makes sure the letter hasn't already been guessed
+    if (HasBeenGuessed(guess)) {
+        std::cout << "You've already guessed that letter.\n";
         return false;
     }
 
     return true;
 }
 
-bool hangman::has_been_guessed(const char& guess)
-//Goes through 'guesses' and makes sure that 'guess' is not present
+
+// Returns true if a letter has already been guessed.
+bool hangman::HasBeenGuessed(const char& guess)
 {
-    if(guesses.size() == 0){return false;}
+    if (guesses.size() == 0)
+        return false;
 
-    int last = guesses.size();
-    bool present = false;
+    const int stop = guesses.size();
+    for (int i = 0; i < stop; ++i)
+        if (guess == guesses[i])
+            return true;
 
-    for(int i = 0; i < last; i++)
-    {
-        if(guess == guesses[i])
-        {
-            present = true;
-
-            break;
-        }
-    }
-
-    return present;
+    return false;
 }

@@ -1,24 +1,33 @@
-using namespace std;
+#ifndef __HANGMAN_H__
+#define __HANGMAN_H__
 
-class hangman//Class defined to handle the game logic once a word has been chosen
+#include <vector>
+#include <string>
+
+
+// Class defined to handle the game logic once a word has been chosen
+class hangman
 {
     public:
-        hangman(const string& input);
+        hangman(const std::string& input);
 
-        bool check_if_over();
-        void get_input(char& guess);
-        void update_game(const char& guess);
-        void print_progress();
+        bool IsOver();
+        void GetGuess(char& guess);
+        void UpdateProgress(const char guess);
+        void PrintProgress();
 
     private:
-        int mistakes;//Number of mistakes the player has made, you can have 6 mistakes in this game
-        int word_length;//Length of word to be guessed, defined for small optimisation
-        string word;//Stores the word to be guessed
-        vector<char> guesses;//Vector that stores all guesses from the player to make sure they don't pick the same letter twice
-        vector<bool> progress;//Array of bool values set to the length of 'word', when a letter is correctly guessed, say word[3],
-                              //then bool[3] is set to true
-        bool check_if_complete();
-        bool check_if_failed();
-        bool check_if_valid(char& guess);
-        bool has_been_guessed(const char& guess);
+        bool WordRevealed();
+        bool TooManyGuesses();
+        bool ValidGuess(char& guess);
+        bool HasBeenGuessed(const char& guess);
+
+        int mistakes;               // Number of mistakes made by player (<= 6)
+        int wordLength;             // Length of word to be guessed
+        std::string word;           // Word to be guessed
+        std::vector<char> guesses;  // Stores guessed letters from the player
+        std::vector<bool> progress; // Stores which letters have been guessed or not
 };
+
+
+#endif
