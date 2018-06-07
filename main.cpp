@@ -1,97 +1,100 @@
 #include "hangman.h"
 
-#include <iostream>
 #include <fstream>
+#include <string>
 #include <ctime>
 
-bool get_words(vector<string>& words);//Gets words/phrases from text file, returns true if completed successfully
-bool play_again();//Prompts the user if they would like to play again, returns true if users specifies yes
+bool PlayAgain();
+bool LoadWords(std::vector<std::string>& words);
+
 
 int main()
 {
-    cout << "Welcome to hangman!" << endl << endl;
+    std::vector<std::string> words;
+    if (!LoadWords(words))
+        return -1;
 
-    vector<string> words;//Vector to store words from text file
+    srand((unsigned)time(nullptr));
 
-    if(!get_words(words)){return 0;}//If reading words was not possible it exits the program early
+    std::cout << "Welcome to hangman!\n\n";
 
-    srand(time(NULL));
-
-    bool quit = false;//Variable to determine if game loops or not
-
-    while(!quit)//Main game loop
+    bool quit = false;
+    while (!quit)
     {
-        int selection = rand()%words.size();
-
-        hangman game(words[selection]);//Initialises game with random word
+        const int selection = rand() % words.size();
+        hangman game{words[selection]};
 
         game.PrintProgress();
 
-        while(1)//Loop to receive and check guesses after game is initialised
+        while (true)    // Main game loop
         {
             char guess;
-
             game.GetGuess(guess);
-
             game.UpdateProgress(guess);
 
-            cout << endl << endl;
-
+            std::cout << "\n\n";
             game.PrintProgress();
 
-            if(game.IsOver())
-            {
-                if(!play_again()){quit = true;}//If user does not want to play again, main loop is exited
+            if (game.IsOver()) {
+                if (!PlayAgain())
+                    quit = true;
                 break;
             }
         }
     }
 
-    cout << endl << "Thanks for playing!!!" << endl << endl;
+    std::cout << "\nThanks for playing!!!\n\n";
 
     return 0;
 }
 
-bool get_words(vector<string>& words)
+
+// Checks if the user wants to play again.
+bool PlayAgain()
 {
-    ifstream ifile("words.txt");
-
-    if(!ifile.is_open())
+    char choice;
+    while (true)
     {
-        cout << "Could not open file -> Exiting..." << endl;
+        std::cout << "Play again? -> (Y/N): ";
+        std::cin >> choice;
+
+        if ((choice == 'N') || (choice == 'n'))
+            return false;
+        else if ((choice == 'Y') || (choice == 'y'))
+            return true;
+        else
+            std::cout << "Invalid choice.  ";
+    }
+}
+
+
+// Loads all words/phrases from associated "words.txt" file.
+/*
+The file format for "words.txt" is simply one line per word/phrase.
+*/
+bool LoadWords(std::vector<std::string>& words)
+{
+    std::ifstream ifile("words.txt");
+
+    if (!ifile.is_open()) {
+        std::cout << "Could not open file -> Exiting...\n";
         return false;
     }
 
-    string current;
+    std::string current;
 
-    while(getline(ifile, current)){words.push_back(current);}//Uses getline so that phrases can be used in the game
+    while (getline(ifile, current)) // Each line holds different word/phrase
+        words.push_back(current);
 
-    if(words.size() == 0)//If there are no string in words at this point then something went wrong
-    {
-        cout << "Unable to read anything -> Exiting..." << endl;
+    if (words.size() == 0) {
+        std::cout << "Unable to read anything -> Exiting...\n";
         return false;
     }
 
-    if(!ifile.eof())//If not at the end of the file there was an error
-    {
-        cout << "Bad read -> Exiting..." << endl;
+    if (!ifile.eof()) {
+        std::cout << "Bad read -> Exiting...\n";
         return false;
     }
 
     return true;
-}
-
-bool play_again()
-{
-    char choice;
-
-    while(1)
-    {
-        cout << "Play again? -> (Y/N): ";
-        cin >> choice;
-
-        if(choice == 'N' || choice == 'n'){return false;}
-        else if(choice == 'Y' || choice == 'y'){return true;}
-        else{cout << "Invalid choice  .";}
-    }
 }

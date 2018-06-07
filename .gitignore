@@ -6,3 +6,6 @@
 *.tlog
 *.idb
 *.pdb
+*.obj
+*.exe
+*.ilk
