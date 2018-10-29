@@ -1,232 +1,199 @@
 #include "hangman.h"
 
+#include <iostream>
 
-// Initialises the game after being passed a word.
-hangman::hangman(const std::string& input)
-    : mistakes{0}
+Hangman::Hangman(const std::string& word)
+    : numMistakesMade_{ 0 }
 {
-    // Set corresponding bool for 'spaces' to true as we
-    // want /'s displayed in place of spaces throughout
-    const unsigned wordLength = input.size();
-    for (unsigned i = 0; i < wordLength; ++i)
-        word.emplace_back(input[i], (input[i] == ' '));
+    // Set corresponding bool for 'spaces' to true as we want them displayed
+    const size_t wordLength = word.size();
+    word_.reserve(wordLength);
+    for (size_t i = 0; i < wordLength; ++i)
+        word_.emplace_back(word[i], (word[i] == ' '));
 }
 
-
-// Checks if game is over (e.g. no more guesses or word has been correctly guessed).
-bool hangman::IsOver() const
+bool Hangman::isOver() const
 {
-    if (TooManyGuesses())
+    if (tooManyMistakesMade())
     {
-        std::string wordAsStr{GetWordAsString()};
-        std::cout << "\nUh, oh!  Too many guesses...  ";
-        printf("The word/phrase was: %s.\n\n", wordAsStr.c_str());
+        const std::string wordAsString{ getWordAsString() };
+        std::cout << std::endl << "Uh, oh!  Too many mistakes...  "
+            << "The word/phrase was: " << wordAsString << ".\n" << std::endl;
         return true;
     }
 
-    if (WordRevealed()) {
-        std::cout << "\nWell done, you got it!\n\n";
+    if (wordHasBeenRevealed()) {
+        std::cout << std::endl << "Well done, you got it!\n" << std::endl;
         return true;
     }
 
     return false;
 }
 
-
-// Prompts the user to guess a letter and makes sure it is valid before moving on.
-void hangman::GetGuess(char& guess)
+char Hangman::askUserForGuess() const
 {
     while (true)
     {
-        printf("\nGuess: ");
+        std::cout << "\nGuess: ";
+
+        char guess;
         std::cin >> guess;
 
-        if (ValidGuess(guess))
-            break;
+        if (guessIsValid(guess))
+            return guess;
     }
 }
 
-
-// Prints the gallows, progress and guesses.
-/*
-This is pretty tedious... there's probably a smarter way.
-*/
-void hangman::PrintProgress() const
+// 'guess' should be lower case before calling this, this results in only lower
+// case letters being stored in 'guesses' which keeps the logic simpler.
+void Hangman::updateProgress(const char guess)
 {
-    std::cout << "\t     .-----. \n";
-    std::cout << "\t     |     | \n";
-
-    if (mistakes >= 1) {
-        std::cout << "\t     _     | \n";
-        std::cout << "\t    | |    | \n";
-        std::cout << "\t     T     | ";
-    }
-    else {
-        std::cout << "\t           | \n";
-        std::cout << "\t           | \n";
-        std::cout << "\t           | ";
-    }
-
-    std::cout << "\t\t";
-
-    // Prints the current progress towards guessing the word
-    for (const character& ch : word)
-    {
-        if (ch.guessed) {
-            if (ch.letter == ' ')
-                std::cout << '/';
-            else
-                std::cout << ch.letter;
-        }
-        else
-            std::cout << '_';
-
-        std::cout << ' ';
-            
-    }
-
-    std::cout << "\n";
-
-    if (mistakes == 2)
-        std::cout << "\t     +     | ";
-    else if (mistakes == 3)
-        std::cout << "\t   --+     | ";
-    else if (mistakes >= 4)
-        std::cout << "\t   --+--   | ";
-    else
-        std::cout << "\t           | ";
-
-    std::cout << "\n";
-
-    if (mistakes >= 2) {
-        std::cout << "\t     |     | \n";
-        std::cout << "\t     |     | \n";
-        std::cout << "\t     |     | ";
-    }
-    else {
-        std::cout << "\t           | \n";
-        std::cout << "\t           | \n";
-        std::cout << "\t           | ";
-    }
-
-    std::cout << "\t   Guesses: ";
-    for (unsigned i = 0, numGuesses = guesses.size(); i < numGuesses; ++i)
-        if (i == 0)
-            std::cout << guesses[i];
-        else
-            printf(", %c", guesses[i]);
-    std::cout << "\n";
-
-    if (mistakes == 5) {
-        std::cout << "\t    /      | \n";
-        std::cout << "\t   /       | \n";
-        std::cout << "\t           | ";
-    }
-    else if (mistakes >= 5) {
-        std::cout << "\t    / \\    | \n";
-        std::cout << "\t   /   \\   | \n";
-        std::cout << "\t           | ";
-    }
-    else {
-        std::cout << "\t           | \n";
-        std::cout << "\t           | \n";
-        std::cout << "\t           | ";
-    }
-
-    std::cout << "\n\t -------------\n";
-}
-
-
-// Updates the fields in the hangman class.
-/*
-The parameter 'guess' should be lower case before calling this, this results in
-only lower case letters being stored in 'guesses' which keeps the logic simpler.
-*/
-void hangman::UpdateProgress(const char guess)
-{
-    guesses.push_back(guess);
+    guessedLetters_.push_back(guess);
 
     bool present = false;
-
-    // Check for both upper and lower case
-    // letters in case they were used in text file
-    for (character& ch : word)
-        if ((guess == ch.letter) || (toupper(guess) == ch.letter))
+    for (Character& character : word_)
+        if (guess == character.letter_ || toupper(guess) == character.letter_)
         {
-            ch.guessed = true;
+            character.hasBeenGuessed_ = true;
             present = true;
         }
 
     if (present)
         std::cout << "Good guess.";
     else {
-        ++mistakes;
+        ++numMistakesMade_;
         std::cout << "Sorry, not there.";
     }
 }
 
-
-// Checks if the word has been fully revealed.
-bool hangman::WordRevealed() const
+bool Hangman::wordHasBeenRevealed() const
 {
-    for (const character& ch : word)
-        if (!ch.guessed)
+    for (const Character& character : word_)
+        if (!character.hasBeenGuessed_)
             return false;
 
     return true;
 }
 
-
-// Returns true if the player has made 6 guesses.
-bool hangman::TooManyGuesses() const
+bool Hangman::tooManyMistakesMade() const
 {
-    return (mistakes == 6);
+    return (numMistakesMade_ == MaxNumberOfMistakes);
 }
 
-
-// Checks if the current guess is actually a letter and hasn't already been guessed.
-/*
-guess becomes lower case after this function has run.
-*/
-bool hangman::ValidGuess(char& guess) const
+// 'guess' becomes lower case after this function has run.
+bool Hangman::guessIsValid(char& guess) const
 {
     if (!isalpha(guess)) {
-        std::cout << "That's not a letter!\n";
+        std::cout << "That's not a letter!" << std::endl;
         return false;
     }
 
     if (isupper(guess))
         guess = tolower(guess);
 
-    if (HasBeenGuessed(guess)) {
-        std::cout << "You've already guessed that letter.\n";
+    if (hasAlreadyBeenGuessed(guess)) {
+        std::cout << "You've already guessed that letter." << std::endl;
         return false;
     }
 
     return true;
 }
 
-
-// Returns true if the letter has already been guessed.
-bool hangman::HasBeenGuessed(const char guess) const
+bool Hangman::hasAlreadyBeenGuessed(const char guess) const
 {
-    if (guesses.empty())
+    if (guessedLetters_.empty())
         return false;
 
-    for (const char prevGuess : guesses)
-        if (guess == prevGuess)
+    for (const char guessedLetter : guessedLetters_)
+        if (guess == guessedLetter)
             return true;
 
     return false;
 }
 
-
-// Constructs and returns the word the player is guessing as a string.
-std::string hangman::GetWordAsString() const
+std::string Hangman::getWordAsString() const
 {
-    std::string ret{""};
-    for (const character& ch : word)
-        ret += ch.letter;
+    std::string wordAsString{ "" };
+    for (const Character& character : word_)
+        wordAsString += character.letter_;
 
-    return ret;
+    return wordAsString;
+}
+
+std::ostream& operator<<(std::ostream& out, const Hangman& hangman)
+{
+    out << "\t     .-----. \n";
+    out << "\t     |     | \n";
+
+    if (hangman.numMistakesMade_ >= 1) {
+        out << "\t     _     | \n";
+        out << "\t    | |    | \n";
+        out << "\t     T     | ";
+    }
+    else {
+        out << "\t           | \n";
+        out << "\t           | \n";
+        out << "\t           | ";
+    }
+    out << "\t\t";
+
+    // Prints the current progress towards guessing the word
+    for (const Hangman::Character& character : hangman.word_)
+    {
+        if (character.hasBeenGuessed_)
+            out << character.letter_;
+        else
+            out << '_';
+
+        out << ' ';
+    }
+    out << '\n';
+
+    if (hangman.numMistakesMade_ == 2)
+        out << "\t     +     | ";
+    else if (hangman.numMistakesMade_ == 3)
+        out << "\t   --+     | ";
+    else if (hangman.numMistakesMade_ >= 4)
+        out << "\t   --+--   | ";
+    else
+        out << "\t           | ";
+    out << '\n';
+
+    if (hangman.numMistakesMade_ >= 2) {
+        out << "\t     |     | \n";
+        out << "\t     |     | \n";
+        out << "\t     |     | ";
+    }
+    else {
+        out << "\t           | \n";
+        out << "\t           | \n";
+        out << "\t           | ";
+    }
+
+    out << "\t   Guesses: ";
+    for (const char letter : hangman.guessedLetters_) {
+        out << letter;
+        if (letter != hangman.guessedLetters_.back())
+            out << ", ";
+    }
+    out << '\n';
+
+    if (hangman.numMistakesMade_ == 5) {
+        out << "\t    /      | \n";
+        out << "\t   /       | \n";
+        out << "\t           | ";
+    }
+    else if (hangman.numMistakesMade_ >= 5) {
+        out << "\t    / \\    | \n";
+        out << "\t   /   \\   | \n";
+        out << "\t           | ";
+    }
+    else {
+        out << "\t           | \n";
+        out << "\t           | \n";
+        out << "\t           | ";
+    }
+    out << "\n\t -------------";
+
+    return out;
 }

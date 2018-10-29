@@ -1,64 +1,21 @@
 #include "hangman.h"
 
+#include <iostream>
 #include <fstream>
+#include <random>
+#include <chrono>
 #include <string>
-#include <ctime>
 
-bool PlayAgain();
-bool LoadWords(std::vector<std::string>& words);
-
-
-int main()
+static bool askUserToPlayAgain()
 {
-    std::vector<std::string> words;
-    if (!LoadWords(words))
-        return -1;
-
-    srand((unsigned)time(nullptr));
-
-    std::cout << "Welcome to hangman!\n\n";
-
-    bool quit = false;
-    while (!quit)
-    {
-        const int selection = rand() % words.size();
-        hangman game{words[selection]};
-
-        game.PrintProgress();
-
-        while (true)    // Main game loop
-        {
-            char guess;
-            game.GetGuess(guess);
-            game.UpdateProgress(guess);
-
-            std::cout << "\n\n";
-            game.PrintProgress();
-
-            if (game.IsOver()) {
-                if (!PlayAgain())
-                    quit = true;
-                break;
-            }
-        }
-    }
-
-    std::cout << "\nThanks for playing!!!\n\n";
-
-    return 0;
-}
-
-
-// Checks if the user wants to play again.
-bool PlayAgain()
-{
-    char choice;
     while (true)
     {
         std::cout << "Play again? -> (Y/N): ";
+
+        char choice;
         std::cin >> choice;
 
-        if ((choice == 'N') || (choice == 'n'))
+        if (choice == 'N' || choice == 'n')
             return false;
         else if ((choice == 'Y') || (choice == 'y'))
             return true;
@@ -67,34 +24,69 @@ bool PlayAgain()
     }
 }
 
-
-// Loads all words/phrases from associated "words.txt" file.
-/*
-The file format for "words.txt" is simply one line per word/phrase.
-*/
-bool LoadWords(std::vector<std::string>& words)
+// File format described in readme file in repository
+static std::vector<std::string> loadWordsFromFile(const std::string& file)
 {
-    std::ifstream ifile("words.txt");
+    std::ifstream ifile(file);
 
     if (!ifile.is_open()) {
-        std::cout << "Could not open file -> Exiting...\n";
-        return false;
+        std::cout << "Could not open file -> Exiting..." << std::endl;
+        return std::vector<std::string>{};
     }
 
-    std::string current;
+    std::vector<std::string> words;
 
-    while (getline(ifile, current)) // Each line holds different word/phrase
+    std::string current;
+    while (std::getline(ifile, current))
         words.push_back(current);
 
     if (words.size() == 0) {
-        std::cout << "Unable to read anything -> Exiting...\n";
-        return false;
+        std::cout << "Unable to read anything -> Exiting..." << std::endl;
+        return std::vector<std::string>{};
     }
 
     if (!ifile.eof()) {
-        std::cout << "Bad read -> Exiting...\n";
-        return false;
+        std::cout << "Bad read -> Exiting..." << std::endl;
+        return std::vector<std::string>{};
     }
 
-    return true;
+    return words;
+}
+
+int main()
+{
+    const std::vector<std::string> words = loadWordsFromFile("words.txt");
+    if (words.empty())
+        return -1;
+
+    const int lastWordIndex = words.size() - 1;
+    std::uniform_int_distribution<int> uniformDist{ 0, lastWordIndex };
+    std::minstd_rand rng;
+
+    std::cout << "Welcome to hangman!\n" << std::endl;
+
+    bool quit = false;
+    do
+    {
+        const auto currentTime = std::chrono::system_clock::now();
+        const unsigned rngSeed =
+            static_cast<unsigned>(currentTime.time_since_epoch().count());
+        rng.seed(rngSeed);
+
+        Hangman game{ words[uniformDist(rng)] };
+
+        std::cout << game << std::endl;
+
+        while (!game.isOver())
+        {
+            const char guess = game.askUserForGuess();
+            game.updateProgress(guess);
+
+            std::cout << "\n\n" << game << std::flush;
+        }
+    } while (askUserToPlayAgain());
+
+    std::cout << "\nThanks for playing!!!\n" << std::endl;
+
+    return 0;
 }

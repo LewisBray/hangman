@@ -1,44 +1,45 @@
 #ifndef __HANGMAN_H__
 #define __HANGMAN_H__
 
-#include <iostream>
+#include <string>
 #include <vector>
 
-
 // Class defined to handle the game logic once a word has been chosen
-class hangman
+class Hangman
 {
 public:
-    hangman(const std::string& input);
+    Hangman(const std::string& word);
 
-    bool IsOver() const;
-    void PrintProgress() const;
-    void GetGuess(char& guess);
-    void UpdateProgress(const char guess);
+    char askUserForGuess() const;
+    bool isOver() const;
+    void updateProgress(const char guess);
+
+    friend std::ostream& operator<<(std::ostream& out, const Hangman& hangman);
 
 private:
-    bool WordRevealed() const;
-    bool TooManyGuesses() const;
-    bool ValidGuess(char& guess) const;
-    bool HasBeenGuessed(const char guess) const;
-    std::string GetWordAsString() const;
+    enum { MaxNumberOfMistakes = 6 };
 
+    bool tooManyMistakesMade() const;
+    bool wordHasBeenRevealed() const;
+    bool guessIsValid(char& guess) const;
+    bool hasAlreadyBeenGuessed(const char guess) const;
+    std::string getWordAsString() const;
 
     // Struct that holds info on each character in word to be guessed
-    struct character
+    struct Character
     {
-        character(const char nextLetter, const bool defaultVal)
-            : letter{ nextLetter }
-            , guessed{ defaultVal }
+        Character(const char letter, const bool hasBeenGuessed)
+            : letter_{ letter }
+            , hasBeenGuessed_{ hasBeenGuessed }
         {}
 
-        char letter;        // Letter the struct represents
-        bool guessed;       // Has the player guessed this correctly
+        char letter_;
+        bool hasBeenGuessed_;
     };
 
-    unsigned mistakes;              // Number of mistakes made (<= 6)
-    std::vector<char> guesses;      // Previously guessed letters
-    std::vector<character> word;    // All info regarding word to guess
+    unsigned numMistakesMade_;
+    std::vector<char> guessedLetters_;
+    std::vector<Character> word_;
 };
 
 #endif
