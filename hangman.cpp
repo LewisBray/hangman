@@ -1,6 +1,7 @@
 #include "hangman.h"
 
 #include <iostream>
+#include <sstream>
 
 Hangman::Hangman(const std::string& word)
     : numMistakesMade_{ 0 }
@@ -120,80 +121,127 @@ std::string Hangman::getWordAsString() const
     return wordAsString;
 }
 
-std::ostream& operator<<(std::ostream& out, const Hangman& hangman)
+std::string Hangman::formatUserGuesses() const
 {
-    out << "\t     .-----. \n";
-    out << "\t     |     | \n";
-
-    if (hangman.numMistakesMade_ >= 1) {
-        out << "\t     _     | \n";
-        out << "\t    | |    | \n";
-        out << "\t     T     | ";
+    std::stringstream userGuesses;
+    for (const char letter : guessedLetters_) {
+        userGuesses << letter;
+        if (letter != guessedLetters_.back())
+            userGuesses << ", ";
     }
-    else {
-        out << "\t           | \n";
-        out << "\t           | \n";
-        out << "\t           | ";
-    }
-    out << "\t\t";
 
-    // Prints the current progress towards guessing the word
-    for (const Hangman::Character& character : hangman.word_)
+    return userGuesses.str();
+}
+
+std::string Hangman::formatWordProgress() const
+{
+    std::stringstream wordProgress;
+    for (const Hangman::Character& character : word_)
     {
         if (character.hasBeenGuessed_)
-            out << character.letter_;
+            wordProgress << character.letter_;
         else
-            out << '_';
+            wordProgress << '_';
 
-        out << ' ';
+        wordProgress << ' ';
     }
-    out << '\n';
+
+    return wordProgress.str();
+}
+
+// Some constants for drawing the gallows
+static const char topOfGallows[] =
+    "\t     .-----. \n"
+    "\t     |     | \n";
+
+static const char head[] =
+    "\t     _     | \n"
+    "\t    | |    | \n"
+    "\t     T     | ";
+
+static const char noHead[] =
+    "\t           | \n"
+    "\t           | \n"
+    "\t           | ";
+
+static const char noChest[] =
+    "\t           | ";
+
+static const char chest[] =
+    "\t     +     | ";
+
+static const char chestWithArm[] =
+    "\t   --+     | ";
+
+static const char chestWithBothArms[] =
+    "\t   --+--   | ";
+
+static const char noTorso[] =
+    "\t           | \n"
+    "\t           | \n"
+    "\t           | ";
+
+static const char torso[] =
+    "\t     |     | \n"
+    "\t     |     | \n"
+    "\t     |     | ";
+
+static const char noLegs[] =
+    "\t           | \n"
+    "\t           | \n"
+    "\t           | ";
+
+static const char oneLeg[] =
+    "\t    /      | \n"
+    "\t   /       | \n"
+    "\t           | ";
+
+static const char bothLegs[] =
+    "\t    / \\    | \n"
+    "\t   /   \\   | \n"
+    "\t           | ";
+
+static const char baseOfGallows[] =
+    "\t -------------";
+
+std::ostream& operator<<(std::ostream& out, const Hangman& hangman)
+{
+    out << topOfGallows;
+
+    if (hangman.numMistakesMade_ >= 1)
+        out << head;
+    else
+        out << noHead;
+
+    const std::string wordProgress = hangman.formatWordProgress();
+    out << "\t\t" << wordProgress << '\n';
 
     if (hangman.numMistakesMade_ == 2)
-        out << "\t     +     | ";
+        out << chest;
     else if (hangman.numMistakesMade_ == 3)
-        out << "\t   --+     | ";
+        out << chestWithArm;
     else if (hangman.numMistakesMade_ >= 4)
-        out << "\t   --+--   | ";
+        out << chestWithBothArms;
     else
-        out << "\t           | ";
+        out << noChest;
     out << '\n';
 
-    if (hangman.numMistakesMade_ >= 2) {
-        out << "\t     |     | \n";
-        out << "\t     |     | \n";
-        out << "\t     |     | ";
-    }
-    else {
-        out << "\t           | \n";
-        out << "\t           | \n";
-        out << "\t           | ";
-    }
+    if (hangman.numMistakesMade_ >= 2)
+        out << torso;
+    else
+        out << noTorso;
 
-    out << "\t   Guesses: ";
-    for (const char letter : hangman.guessedLetters_) {
-        out << letter;
-        if (letter != hangman.guessedLetters_.back())
-            out << ", ";
-    }
-    out << '\n';
+    const std::string userGuesses = hangman.formatUserGuesses();
+    out << "\t   Guesses: " << userGuesses << '\n';
 
-    if (hangman.numMistakesMade_ == 5) {
-        out << "\t    /      | \n";
-        out << "\t   /       | \n";
-        out << "\t           | ";
-    }
-    else if (hangman.numMistakesMade_ >= 5) {
-        out << "\t    / \\    | \n";
-        out << "\t   /   \\   | \n";
-        out << "\t           | ";
-    }
-    else {
-        out << "\t           | \n";
-        out << "\t           | \n";
-        out << "\t           | ";
-    }
-    out << "\n\t -------------";
+    if (hangman.numMistakesMade_ == 5)
+        out << oneLeg;
+    else if (hangman.numMistakesMade_ >= 5)
+        out << bothLegs;
+    else
+        out << noLegs;
+
+    out << '\n' << baseOfGallows;
 
     return out;
 }

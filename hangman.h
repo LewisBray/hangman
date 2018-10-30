@@ -13,6 +13,8 @@ public:
     char askUserForGuess() const;
     bool isOver() const;
     void updateProgress(const char guess);
+    std::string formatUserGuesses() const;
+    std::string formatWordProgress() const;
 
     friend std::ostream& operator<<(std::ostream& out, const Hangman& hangman);
 
